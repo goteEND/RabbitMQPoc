@@ -1,0 +1,25 @@
+﻿services:
+  email:
+    image: email
+    build:
+      context: .
+      dockerfile: Email/Dockerfile
+
+  order:
+    image: order
+    build:
+      context: .
+      dockerfile: Order/Dockerfile
+      
+  rabbitmq: # login guest:guest
+    image: rabbitmq:3.13-management
+    hostname: 'rabbitmq'
+    labels:
+      NAME: 'rabbitmq'
+    ports:
+      - '4369:4369'
+      - '5671:5671'
+      - '5672:5672'
+      - '25672:25672'
+      - '15671:15671'
+      - '15672:15672'
