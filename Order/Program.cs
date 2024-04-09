@@ -11,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<IMessageService, MessageService>();
+builder.Services.AddSingleton<IResponseService, ResponseService>();
 
 var app = builder.Build();
 

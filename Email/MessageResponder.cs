@@ -5,61 +5,47 @@ using RabbitMQ.Client.Events;
 
 namespace Email;
 
-public class Receiver
+public class MessageResponder
 {
     private readonly IModel _channel;
     
-    public Receiver()
+    public MessageResponder()
     {
         var factory = new ConnectionFactory
         {
-            HostName = "localhost",
+            HostName = "rabbitmq",
             Port = 5672,
             UserName = "guest",
             Password = "guest"
         };
         var connection = factory.CreateConnection();
         _channel = connection.CreateModel();
-        _channel.QueueDeclare(queue: "orderqueue",
+        _channel.QueueDeclare(queue: "orderresponse",
             durable: false,
             exclusive: false,
             autoDelete: false,
             arguments: null);
-    }
-
-    public void ReceiveMessage()
-    {
-        _channel.QueueDeclare(queue: "orderqueue",
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null);
-
-        var consumer = new EventingBasicConsumer(_channel);
-        consumer.Received += (model, ea) =>
-        {
-            var body = ea.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            Console.WriteLine(" [x] Received {0}", message);
-        };
-        
-        _channel.BasicConsume(queue: "orderqueue",
-            autoAck: true,
-            consumer: consumer);
     }
     
-    private void RespondMessage(byte[] body)
+    public void RespondMessage(byte[] body)
     {
+        var response = BeautifyMessage(body);
         _channel.BasicPublish(exchange: "",
-            routingKey: "orderqueue",
+            routingKey: "orderresponse",
             basicProperties: null,
-            body: body);
+            body: response);
     }
     
-    private static string BeautifyMessage(string message)
+    private static byte[] BeautifyMessage(byte[] body)
     {
+        var message = Encoding.UTF8.GetString(body);
+        
         Console.WriteLine($"BeautifyMessage: {message}");
+        
         var splitMessage = message.Split(';');
-        return $"Order for {splitMessage[0]} consisting {splitMessage[2]} sent to {splitMessage[1]}";
+        
+        var response = $"Order for {splitMessage[0]} consisting {splitMessage[2]} sent to {splitMessage[1]}";
+        
+        return Encoding.UTF8.GetBytes(response);
     }
 }

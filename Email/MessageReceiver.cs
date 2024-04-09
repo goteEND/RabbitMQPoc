@@ -5,15 +5,15 @@ using RabbitMQ.Client.Events;
 
 namespace Email;
 
-public class Receiver
+public class MessageReceiver
 {
     private readonly IModel _channel;
     
-    public Receiver()
+    public MessageReceiver()
     {
         var factory = new ConnectionFactory
         {
-            HostName = "localhost",
+            HostName = "rabbitmq",
             Port = 5672,
             UserName = "guest",
             Password = "guest"
@@ -41,6 +41,9 @@ public class Receiver
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
             Console.WriteLine(" [x] Received {0}", message);
+            
+            var responder = new MessageResponder();
+            responder.RespondMessage(body);
         };
         
         _channel.BasicConsume(queue: "orderqueue",

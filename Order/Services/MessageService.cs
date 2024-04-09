@@ -8,20 +8,19 @@ namespace Order.Services;
 
 public class MessageService : IMessageService
 {
-    private readonly IConnection _connection;
     private readonly IModel _channel;
 
     public MessageService()
     {
         var factory = new ConnectionFactory
         {
-            HostName = "localhost",
+            HostName = "rabbitmq",
             Port = 5672,
             UserName = "guest",
             Password = "guest"
         };
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
+        var connection = factory.CreateConnection();
+        _channel = connection.CreateModel();
         _channel.QueueDeclare(queue: "orderqueue",
             durable: false,
             exclusive: false,
@@ -29,7 +28,7 @@ public class MessageService : IMessageService
             arguments: null);
     }
 
-    public string MessageOrder(UserOrder userOrder)
+    public void MessageOrder(UserOrder userOrder)
     {
         var message = $"{userOrder.Name};{userOrder.Email};{userOrder.Product}";
 
@@ -39,33 +38,19 @@ public class MessageService : IMessageService
             routingKey: "orderqueue",
             basicProperties: null,
             body: body);
-
-        var response = OrderConfirmation();
-        return response;
     }
 
-    private string OrderConfirmation()
+    private void OrderConfirmation()
     {
-        var tcs = new TaskCompletionSource<string>();
         var consumer = new EventingBasicConsumer(_channel);
         consumer.Received += (model, ea) =>
         {
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
-            tcs.SetResult(message);
         };
 
-        _channel.BasicConsume(queue: "orderqueue",
+        _channel.BasicConsume(queue: "orderresponse",
             autoAck: true,
             consumer: consumer);
-
-        return tcs.Task.Result;
     }
-
-    public void Close()
-    {
-        _channel.Close();
-        _connection.Close();
-    }
-
 }
