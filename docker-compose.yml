@@ -4,12 +4,17 @@
     build:
       context: .
       dockerfile: Email/Dockerfile
+    depends_on:
+      - order
+      - rabbitmq
 
   order:
     image: order
     build:
       context: .
       dockerfile: Order/Dockerfile
+    depends_on:
+      - rabbitmq
       
   rabbitmq: # login guest:guest
     image: rabbitmq:3.13-management
